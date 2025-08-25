@@ -2,7 +2,7 @@ bddl
 easydict
 transforms3d
 matplotlib
-numpy==1.23.2
+numpy==1.24.0
 opencv-python==4.6.0.66
 mujoco==3.1.1
 huggingface_hub==0.23.4
