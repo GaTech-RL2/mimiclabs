@@ -19,6 +19,8 @@ from mimicgen.configs.config import get_all_registered_configs
 
 import mimiclabs
 from mimiclabs.mimicgen.config import generate_mg_config_classes
+import mimiclabs.mimiclabs.envs.bddl_utils as BDDLUtils
+from mimiclabs.mimiclabs.envs.bddl_base_domain import TASK_MAPPING
 
 
 def generate_config_templates(args):
@@ -34,11 +36,11 @@ def generate_config_templates(args):
     # check if target_dir exists and prompt before overriding
     if os.path.exists(target_dir):
         inp = input(
-            f"Directory {target_dir} already exists. Would you like to overwrite it? y/n\n"
+            f"Directory {target_dir} already exists. Would you like to overwrite it? [y/n]\n"
         )
         if inp.lower() not in ["y", "yes"]:
             print("Exiting without generating config templates.")
-            return target_dir
+            return None
 
     # get all registered config classes
     all_configs = get_all_registered_configs()
@@ -50,13 +52,32 @@ def generate_config_templates(args):
         assert name == c.NAME
         assert args.task_suite_name == c.TYPE
 
-        # change config params based on args
-        c.experiment.source.dataset_path = os.path.join(
-            args.source_demos_dir, name, "demo.hdf5"
-        )
-        assert os.path.exists(
-            c.experiment.source.dataset_path
-        ), f"Source demos not found at {c.experiment.source.dataset_path}"
+        # set source dataset path
+        if args.source_dataset_path is not None:
+            assert (
+                args.source_demos_dir is None
+            ), "Cannot provide both --source_dataset_path and --source_demos_dir"
+            # override source dataset path
+            c.experiment.source.dataset_path = args.source_dataset_path
+        else:
+            assert (
+                args.source_demos_dir is not None
+            ), "Must provide either --source_dataset_path or --source_demos_dir"
+            # demos for each task are expected to be in source_demos_dir/name/demo.hdf5
+            c.experiment.source.dataset_path = os.path.join(
+                args.source_demos_dir, name, "demo.hdf5"
+            )
+        try:
+            # check if source demos exist
+            assert os.path.exists(c.experiment.source.dataset_path)
+        except AssertionError as e:
+            print(f"Source demos not found at {c.experiment.source.dataset_path}")
+            inp = input("Would you like to continue? [y/n]\n")
+            if inp.lower() not in ["y", "yes"]:
+                print("Exiting without generating config templates.")
+                raise e
+
+        # set remaining config params based on args
         c.experiment.generation.path = os.path.join(args.generation_dir, name)
         c.experiment.generation.guarantee = True
         c.experiment.generation.num_trials = args.num_demos
@@ -65,6 +86,30 @@ def generate_config_templates(args):
         c.experiment.num_fail_demo_to_render = args.num_fail_demo_to_render
         c.experiment.source.n = args.limit_source_demos
         c.experiment.generation.select_src_per_subtask = args.select_src_per_subtask
+
+        # set env_meta_update_kwargs if source demos were collected for a different task
+        if args.source_dataset_path is not None:
+            # set the BDDL file path
+            bddl_file_name = os.path.join(
+                mimiclabs.__path__[0],
+                "mimiclabs",
+                "task_suites",
+                args.task_suite_name,
+                f"{name}.bddl",
+            )
+
+            # parse the BDDL to get environment class
+            parsed_problem = BDDLUtils.robosuite_parse_problem(bddl_file_name)
+            env_class = TASK_MAPPING[parsed_problem["problem_name"]]
+            env_name = env_class.__name__
+
+            # set env_name and bddl_file_name in env_meta_update_kwargs
+            c.experiment.task.env_meta_update_kwargs = {
+                "env_name": env_name,
+                "env_kwargs": {
+                    "bddl_file_name": bddl_file_name
+                }
+            }
 
         # dump to json
         json_path = os.path.join(target_dir, f"{name}.json")
@@ -77,20 +122,21 @@ def main(args):
         args.task_suite_name, args.camera_names, args.camera_height, args.camera_width
     )
     config_dir = generate_config_templates(args)
-    print(colored(f"Generated config templates", "green"), f"--> {config_dir}")
+    if config_dir is not None:
+        print(colored(f"Generated config templates", "green"), f"--> {config_dir}")
 
-    with open(os.path.join(config_dir, "jobs.sh"), "w") as f:
-        f.write("#!/bin/bash\n")
-        for config_file in os.listdir(config_dir):
-            if config_file.endswith(".json"):
-                f.write(
-                    f"python scripts/generate_dataset.py --config {os.path.join(config_dir, config_file)} --auto-remove-exp &\n"
-                )
+        with open(os.path.join(config_dir, "jobs.sh"), "w") as f:
+            f.write("#!/bin/bash\n")
+            for config_file in sorted(os.listdir(config_dir)):
+                if config_file.endswith(".json"):
+                    f.write(
+                        f"python scripts/generate_dataset.py --config {os.path.join(config_dir, config_file)} --auto-remove-exp &\n"
+                    )
 
-    print(
-        colored(f"Exported datagen jobs", "green"),
-        f"--> {os.path.join(config_dir, 'jobs.sh')}",
-    )
+        print(
+            colored(f"Exported datagen jobs", "green"),
+            f"--> {os.path.join(config_dir, 'jobs.sh')}",
+        )
 
 
 if __name__ == "__main__":
@@ -104,8 +150,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source_demos_dir",
         type=str,
-        required=True,
+        required=False,
+        default=None,
         help="directory containing source demos for the task suite, one subdirectory per task bddl file",
+    )
+    parser.add_argument(
+        "--source_dataset_path",
+        type=str,
+        required=False,
+        default=None,
+        help="if provided, uses this path to load source demos for each task instead of looking for demos in source_demos_dir/task_name",
     )
     parser.add_argument(
         "--generation_dir",
