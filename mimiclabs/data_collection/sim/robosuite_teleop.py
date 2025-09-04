@@ -155,9 +155,17 @@ class RobosuiteTeleop:
         return pos_ori_mat
 
     def get_observation(self, di=None):
-        # NOTE returning images as-is, not flipping
         if di is None:
             di = self.env._get_observations()
+
+            # maybe flip images vertically
+            flip_img = 1
+            if robosuite.macros.IMAGE_CONVENTION == "opengl":
+                flip_img = -1  # flip image to convert to OpenCV convention
+            for k in di.keys():
+                if k.endswith("_image"):  # robosuite image keys end with "_image"
+                    di[k] = di[k][::flip_img, :, :]
+
         ret = deepcopy(di)
 
         return ret
