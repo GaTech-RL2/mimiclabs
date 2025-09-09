@@ -126,7 +126,7 @@ if __name__ == "__main__":
         "--labs",
         type=str,
         nargs="+",
-        default="all",
+        default=["all"],
         help="labs to download datasets for. Defaults to all labs. Pass 'all' to download all labs.",
     )
 
