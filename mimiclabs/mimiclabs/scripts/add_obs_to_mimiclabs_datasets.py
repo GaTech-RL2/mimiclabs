@@ -25,15 +25,15 @@ def generate_shell_script(args):
         f.write("#!/bin/bash\n\n")
 
         labs = os.listdir(args.input_root_dir)
-        for lab in labs:
+        for lab in sorted(labs):
             if not os.path.isdir(os.path.join(args.input_root_dir, lab)):
                 continue
             tasks = os.listdir(os.path.join(args.input_root_dir, lab))
-            for task in tasks:
+            for task in sorted(tasks):
                 if not os.path.isdir(os.path.join(args.input_root_dir, lab, task)):
                     continue
                 task_variants = os.listdir(os.path.join(args.input_root_dir, lab, task))
-                for task_variant in task_variants:
+                for task_variant in sorted(task_variants):
                     task_variant_dir = os.path.join(
                         args.input_root_dir, lab, task, task_variant
                     )
