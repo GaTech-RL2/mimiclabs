@@ -124,6 +124,7 @@ def dataset_states_to_obs(args):
     env_meta["env_kwargs"]["camera_heights"] = args.camera_height
     env_meta["env_kwargs"]["camera_widths"] = args.camera_width
     env_meta["env_kwargs"]["camera_names"] = args.camera_names
+    env_meta["env_kwargs"]["camera_depths"] = args.camera_depths
     env_meta_to_save = deepcopy(env_meta)
     if args.render:
         env_meta["env_kwargs"]["has_renderer"] = True
@@ -244,6 +245,12 @@ if __name__ == "__main__":
         nargs="+",
         default=["agentview"],
         help="(optional) camera name(s) to use for image observations. Leave out to not use image observations.",
+    )
+
+    parser.add_argument(
+        "--camera_depths",
+        action="store_true",
+        help="(optional) store depth images in dataset",
     )
 
     parser.add_argument(

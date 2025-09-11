@@ -49,7 +49,11 @@ def generate_shell_script(args):
                     f.write(f"python scripts/dataset_states_to_obs.py \\\n")
                     f.write(f"{spacing}--dataset {task_variant_dir}/demo.hdf5 \\\n")
                     f.write(f"{spacing}--output_dir {task_variant_dir} \\\n")
-                    f.write(f"{spacing}--camera_names agentview robot0_eye_in_hand \\\n")
+                    f.write(
+                        f"{spacing}--camera_names agentview robot0_eye_in_hand \\\n"
+                    )
+                    if args.add_depth_obs:
+                        f.write(f"{spacing}--camera_depths \\\n")
                     f.write(f"{spacing}--camera_height 128 \\\n")
                     f.write(f"{spacing}--camera_width 128 \n")
                     f.write("\n")
@@ -70,6 +74,11 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="directory to write converted dataset to",
+    )
+    parser.add_argument(
+        "--add_depth_obs",
+        action="store_true",
+        help="whether to add camera depths to the dataset",
     )
 
     args = parser.parse_args()
