@@ -89,6 +89,7 @@ def extract_trajectory(env, initial_state, states, actions, actions_abs, render=
             # robosuite image keys end with "_image", depth keys end with "_depth"
             if k.endswith("_image") or k.endswith("_depth"):
                 obs[k] = obs[k][::flip_img]
+                next_obs[k] = next_obs[k][::flip_img]
 
         # collect transition
         traj["obs"].append(obs)
