@@ -91,7 +91,7 @@ If you find this repo useful, please cite in your work:
 @inproceedings{
 saxena2025mimiclabs,
     title={What Matters in Learning from Large-Scale Datasets for Robot Manipulation},
-    author={Vaibhav Saxena, Matthew Bronars, Nadun Ranawaka Arachchige, Kuancheng Wang, Woo Chul Shin, Soroush Nasiriany, Ajay Mandlekar, Danfei Xu},
+    author={Vaibhav Saxena and Matthew Bronars and Nadun Ranawaka Arachchige and Kuancheng Wang and Woo Chul Shin and Soroush Nasiriany and Ajay Mandlekar and Danfei Xu},
     booktitle={The Thirteenth International Conference on Learning Representations},
     year={2025},
     url={https://arxiv.org/pdf/2506.13536}
