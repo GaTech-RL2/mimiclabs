@@ -61,7 +61,7 @@
   )
 
   (:demonstration
-    (:Open wooden_cabinet_1_top_region)
+    (Open wooden_cabinet_1_top_region)
     (Grasp object_1)
     (In object_1 wooden_cabinet_1_top_region)
   )
