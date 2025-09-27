@@ -81,19 +81,22 @@ def extract_trajectory(env, initial_state, states, actions, actions_abs, render=
         # infer done signal
         done = env._check_success()
 
+        obs_for_storage = deepcopy(obs)
+        next_obs_for_storage = deepcopy(next_obs)
+
         # maybe flip images vertically to convert to OpenCV convention
         flip_img = 1
         if robosuite.macros.IMAGE_CONVENTION == "opengl":
             flip_img = -1
-        for k in obs.keys():
+        for k in obs_for_storage.keys():
             # robosuite image keys end with "_image", depth keys end with "_depth"
             if k.endswith("_image") or k.endswith("_depth"):
-                obs[k] = obs[k][::flip_img]
-                next_obs[k] = next_obs[k][::flip_img]
+                obs_for_storage[k] = obs_for_storage[k][::flip_img]
+                next_obs_for_storage[k] = next_obs_for_storage[k][::flip_img]
 
         # collect transition
-        traj["obs"].append(obs)
-        traj["next_obs"].append(next_obs)
+        traj["obs"].append(obs_for_storage)
+        traj["next_obs"].append(next_obs_for_storage)
         traj["rewards"].append(r)
         traj["dones"].append(done)
 
