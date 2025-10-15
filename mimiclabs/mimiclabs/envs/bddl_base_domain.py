@@ -608,7 +608,10 @@ class BDDLBaseDomain(RobosuiteEnv):
                         tex_file_path = os.path.join(texture_folder, tex_file)
 
                     else:
-                        tex_file_path = np.random.choice(texture_params["files"])
+                        # use specified texture files
+                        tex_file_path = os.path.join(
+                            ASSETS_ROOT, np.random.choice(texture_params["files"])
+                        )
                         assert os.path.exists(
                             tex_file_path
                         ), f"Texture file {tex_file_path} does not exist."

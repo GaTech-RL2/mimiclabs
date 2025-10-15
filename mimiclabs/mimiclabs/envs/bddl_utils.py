@@ -45,10 +45,6 @@ def get_textures(group):
                 textures[obj_name]["sigma"] = eval(prop[1])
             elif prop[0] == ":files":
                 files_list = prop[1]
-                for filename in files_list:
-                    assert os.path.exists(
-                        filename
-                    ), f"Texture file {filename} does not exist."
                 textures[obj_name]["files"] = files_list
 
     return textures
