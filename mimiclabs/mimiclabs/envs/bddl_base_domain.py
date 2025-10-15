@@ -592,17 +592,28 @@ class BDDLBaseDomain(RobosuiteEnv):
                 H, W = img_bgr.shape[:2]
 
                 if texture_params["texture_type"] == "file":
-                    if "table" in obj_name:
-                        texture_folder = os.path.join(
-                            ASSETS_ROOT, "scenes/mimiclabs_scenes/textures/tables"
-                        )
+                    if "files" not in texture_params:
+                        # use default texture files
+
+                        if "table" in obj_name:
+                            texture_folder = os.path.join(
+                                ASSETS_ROOT, "scenes/mimiclabs_scenes/textures/tables"
+                            )
+                        else:
+                            texture_folder = os.path.join(
+                                ASSETS_ROOT, "scenes/mimiclabs_scenes/textures/object"
+                            )
+                        texture_files = os.listdir(texture_folder)
+                        tex_file = np.random.choice(texture_files)
+                        tex_file_path = os.path.join(texture_folder, tex_file)
+
                     else:
-                        texture_folder = os.path.join(
-                            ASSETS_ROOT, "scenes/mimiclabs_scenes/textures/object"
-                        )
-                    texture_files = os.listdir(texture_folder)
-                    tex_file = np.random.choice(texture_files)
-                    tex.attrib["file"] = os.path.join(texture_folder, tex_file)
+                        tex_file_path = np.random.choice(texture_params["files"])
+                        assert os.path.exists(
+                            tex_file_path
+                        ), f"Texture file {tex_file_path} does not exist."
+
+                    tex.attrib["file"] = tex_file_path
 
                     image = cv2.imread(tex.attrib["file"])
 
@@ -1152,22 +1163,25 @@ class BDDLBaseDomain(RobosuiteEnv):
         # Resetting table texture to default
         tex = asset.find("./texture[@name='tex-table']")
         if tex is not None:
-            orig_scene = ET.parse(self._arena_xml)
-            orig_tex_file = orig_scene.find(
-                "./asset/texture[@name='tex-table']"
-            ).attrib["file"]
-            orig_tex_file = os.path.join(
-                os.path.dirname(self._arena_xml), orig_tex_file
-            )
-            tex.attrib["file"] = orig_tex_file
+            # Find original texture file from original xml
+            if not os.path.exists(tex.attrib["file"]):
+                orig_scene = ET.parse(self._arena_xml)
+                orig_tex_file = orig_scene.find(
+                    "./asset/texture[@name='tex-table']"
+                ).attrib["file"]
+                orig_tex_file = os.path.join(
+                    os.path.dirname(self._arena_xml), orig_tex_file
+                )
+                tex.attrib["file"] = orig_tex_file
 
         # Resetting all object textures to default
         for _, obj in self.objects_dict.items():
             objtex = obj.asset.find("./texture")
-            texname = objtex.attrib["name"]
-            asset.find(f"./texture[@name='{texname}']").attrib["file"] = objtex.attrib[
-                "file"
-            ]
+            if objtex is not None:
+                texname = objtex.attrib["name"]
+                tex = asset.find(f"./texture[@name='{texname}']")
+                if not os.path.exists(tex.attrib["file"]):
+                    tex.attrib["file"] = objtex.attrib["file"]
 
         modified_xml_string = ET.tostring(root, encoding="utf8").decode("utf8")
         super().reset_from_xml_string(modified_xml_string)
