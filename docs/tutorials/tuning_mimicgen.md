@@ -55,6 +55,7 @@ Below are some useful arguments to this script:
 |:--------------------|:--------------------|
 | task_suite_name | name of task suite to generate demos for |
 | source_demos_dir | directory containing source demos for the task suite, one subdirectory per task bddl file |
+| source_dataset_path | if provided, uses this path to load source demos for each task instead of looking for demos in source_demos_dir/task_name |
 | generation_dir | directory to store generated demos for the task suite, one subdirectory per task bddl file |
 | num_demos | number of demos to generate for each task bddl |
 | camera_names | list of camera names to use for rendering and store to dataset; default is ["agentview", "robot0_eye_in_hand"] |

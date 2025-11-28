@@ -1,12 +1,16 @@
 """
 This script renames the "_static" folder to "static" in the HTML build directory
 and updates all references in the HTML files to point to the new folder name.
+
+Also copies the "images" directory to the HTML build directory if it exists.
 """
 
 import os
 import shutil
 
-HTML_DIR = "_build/html"
+BUILD_DIR = "_build"
+HTML_DIR = os.path.join(BUILD_DIR, "html")
+IMAGES_DIR = "images"
 OLD_STATIC = "_static"
 NEW_STATIC = "static"
 
@@ -31,3 +35,7 @@ for root, _, files in os.walk(HTML_DIR):
                 content = content.replace(OLD_STATIC, NEW_STATIC)
                 with open(fpath, 'w', encoding='utf-8') as f:
                     f.write(content)
+
+# 3. Copy IMAGES_DIR to HTML_DIR if it exists
+if os.path.isdir(IMAGES_DIR):
+    shutil.copytree(IMAGES_DIR, os.path.join(HTML_DIR, "images"), dirs_exist_ok=True)

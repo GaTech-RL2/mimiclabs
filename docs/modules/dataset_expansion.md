@@ -32,3 +32,17 @@ $ ./exps/<YOUR/TASK/SUITE>/jobs.sh
 ```
 
 Each data data generation job runs `mimiclabs/mimicgen/scripts/generate_dataset.py`.
+
+### Re-using source demonstrations across a task suite
+
+To re-use source datasets for new BDDLs when using MimicGen, create a `task_suite` containing all the new BDDLs, then run:
+
+```bash
+$ cd <PATH_TO_THIS_REPO>/mimiclabs/mimicgen
+$ python scripts/generate_configs_and_jobs.py \
+    --task_suite_name <YOUR/TASK/SUITE> \
+    --source_dataset_path <PATH/TO/REUSABLE/SOURCE/DEMOS> \
+    --generation_dir <DIR/TO/GENERATION/DEMOS> \
+    --num_demos <NUM_DEMOS_PER_TASK>
+```
+where you can provide the source demos that you want to re-use for all tasks in the suite, in the `--source_dataset_path` arg.
