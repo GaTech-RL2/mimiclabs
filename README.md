@@ -1,6 +1,8 @@
 # MimicLabs
 
-<img src="./docs/images/mimiclabs-dataset.jpg">
+<p align="center">
+  <img width="95.0%" src="./docs/images/mimiclabs-logo-video.gif">
+</p>
 
 Welcome to MimicLabs, your one-stop place for collecting and generating datasets for table-top manipulation! MimicLabs provides a framework for describing a suite of MuJoCo-based tasks, collecting expert demonstrations, and large-scale data generation using MimicGen.
 
