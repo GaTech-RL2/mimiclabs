@@ -345,7 +345,7 @@ class BDDLBaseDomain(RobosuiteEnv):
         """
         raise NotImplementedError
 
-    def _load_objects_in_arena(self, mujoco_arena):
+    def _load_objects_in_arena(self, mujoco_arena, object_params):
         """
         Load movable objects based on the bddl file description
         """
@@ -465,7 +465,7 @@ class BDDLBaseDomain(RobosuiteEnv):
 
         self._load_fixtures_in_arena(mujoco_arena)
 
-        self._load_objects_in_arena(mujoco_arena)
+        self._load_objects_in_arena(mujoco_arena, self.parsed_problem["object_params"])
 
         self._load_sites_in_arena(mujoco_arena)
 

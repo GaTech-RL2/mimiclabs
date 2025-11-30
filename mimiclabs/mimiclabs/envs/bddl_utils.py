@@ -74,6 +74,7 @@ def get_camera_poses(group):
     ], f"Camera pose unit should be radians or degrees, {camera['unit']} not supported."
     return camera
 
+
 def get_table_params(group):
     """Parse table parameters (size as [width, length, height]) from BDDL."""
     table_params = {}
@@ -83,6 +84,33 @@ def get_table_params(group):
             size_values = [eval(val) for val in subgrp[1:]]
             table_params["size"] = size_values
     return table_params
+
+
+def get_object_params(group):
+    """
+    Parse object parameters from BDDL generically.
+    Returns a dict mapping object names to their parameters as kwargs.
+    """
+    object_params = {}
+    for obj_group in group[1:]:
+        # obj_group[0] is like :object_1, strip the colon to get object name
+        obj_name = obj_group[0].lstrip(":")
+        object_params[obj_name] = {}
+
+        for param in obj_group[1:]:
+            # Strip the colon from parameter name
+            param_name = param[0].lstrip(":")
+
+            # Evaluate all parameter values
+            param_values = [eval(val) for val in param[1:]]
+
+            # If single value, unwrap from list; otherwise keep as list
+            if len(param_values) == 1:
+                object_params[obj_name][param_name] = param_values[0]
+            else:
+                object_params[obj_name][param_name] = param_values
+
+    return object_params
 
 
 def robosuite_parse_problem(problem_filename):
@@ -100,6 +128,7 @@ def robosuite_parse_problem(problem_filename):
         camera = {}
         lighting = {}
         table_params = {}
+        object_params = {}
         obj_of_interest = []
         initial_state = []
         goal_state = []
@@ -138,6 +167,8 @@ def robosuite_parse_problem(problem_filename):
                 camera = get_camera_poses(group)
             elif t == ":table":
                 table_params = get_table_params(group)
+            elif t == ":object_params":
+                object_params = get_object_params(group)
             elif t == ":lighting":
                 lighting["source"] = []
                 for subgrp in group[1:]:
@@ -192,6 +223,7 @@ def robosuite_parse_problem(problem_filename):
             "textures": textures,
             "camera": camera,
             "table_params": table_params,
+            "object_params": object_params,
             "lighting": lighting,
             "scene_properties": scene_properties,
             "initial_state": initial_state,
