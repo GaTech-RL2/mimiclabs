@@ -74,6 +74,16 @@ def get_camera_poses(group):
     ], f"Camera pose unit should be radians or degrees, {camera['unit']} not supported."
     return camera
 
+def get_table_params(group):
+    """Parse table parameters (size as [width, length, height]) from BDDL."""
+    table_params = {}
+    for subgrp in group[1:]:
+        if subgrp[0] == ":size":
+            # Parse size as a list of 3 values: width, length, height
+            size_values = [eval(val) for val in subgrp[1:]]
+            table_params["size"] = size_values
+    return table_params
+
 
 def robosuite_parse_problem(problem_filename):
     if problem_filename.endswith(".json"):
@@ -89,6 +99,7 @@ def robosuite_parse_problem(problem_filename):
         textures = {}
         camera = {}
         lighting = {}
+        table_params = {}
         obj_of_interest = []
         initial_state = []
         goal_state = []
@@ -125,6 +136,8 @@ def robosuite_parse_problem(problem_filename):
                 textures = get_textures(group)
             elif t == ":camera":
                 camera = get_camera_poses(group)
+            elif t == ":table":
+                table_params = get_table_params(group)
             elif t == ":lighting":
                 lighting["source"] = []
                 for subgrp in group[1:]:
@@ -178,6 +191,7 @@ def robosuite_parse_problem(problem_filename):
             "objects": objects,
             "textures": textures,
             "camera": camera,
+            "table_params": table_params,
             "lighting": lighting,
             "scene_properties": scene_properties,
             "initial_state": initial_state,
