@@ -162,9 +162,17 @@ class BDDLBaseDomain(RobosuiteEnv):
             if "size" in self.parsed_problem["table_params"]:
                 table_size = self.parsed_problem["table_params"]["size"]
                 # Set table length and width (used for resizing geoms in TableArena)
-                self.table_full_size = (table_size[0], table_size[1], self.table_full_size[2])
+                self.table_full_size = (
+                    table_size[0],
+                    table_size[1],
+                    self.table_full_size[2],
+                )
                 # Set table height in table_offset and workspace_offset
-                self.table_offset = (self.table_offset[0], self.table_offset[1], table_size[2])
+                self.table_offset = (
+                    self.table_offset[0],
+                    self.table_offset[1],
+                    table_size[2],
+                )
                 self.workspace_offset = self.table_offset
 
         self.obj_of_interest = self.parsed_problem["obj_of_interest"]
