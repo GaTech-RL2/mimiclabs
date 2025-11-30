@@ -53,12 +53,12 @@ class MimicLabs_Tabletop_Manipulation_Base(BDDLBaseDomain):
                     joints=None,
                 )
 
-    def _load_objects_in_arena(self, mujoco_arena):
+    def _load_objects_in_arena(self, mujoco_arena, object_params):
         objects_dict = self.parsed_problem["objects"]
         for category_name in objects_dict.keys():
             for object_name in objects_dict[category_name]:
                 self.objects_dict[object_name] = get_object_fn(category_name)(
-                    name=object_name
+                    name=object_name, **object_params.get(object_name, {})
                 )
 
     def _load_sites_in_arena(self, mujoco_arena):
