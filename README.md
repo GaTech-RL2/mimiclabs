@@ -86,6 +86,17 @@ Run the following commands to install **Robosuite**, **LIBERO**, **MimicGen**, a
 (mimiclabs)$ python scripts/download_mimiclabs_assets.py
 ```
 
+## MimicLabs Datasets
+
+<p align="center">
+  <img width="95.0%" src="./docs/images/mimiclabs-dataset.jpg">
+</p>
+
+We open-source all datasets used in our study paper, which contains over 850k trajectories across 8 different scenes, that were used to study the effects of different retrieval strategies from a large-scale simulation dataset. 
+
+All datasets are available to download from [🤗 Hugging Face](https://huggingface.co/datasets/vaibhavsaxena11/mimiclabs_datasets/tree/main).
+
+
 ## Citation
 
 If you find this repo useful, please cite in your work:
