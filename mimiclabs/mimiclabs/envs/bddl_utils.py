@@ -50,28 +50,76 @@ def get_textures(group):
     return textures
 
 
-def get_camera_poses(group):
+def get_camera_params(group):
+    """
+    Parse camera parameters from BDDL.
+
+    Parses the following camera parameters:
+    - ranges (list of lists): List of camera pose ranges in spherical coordinates (physics convention).
+      Each range is [r_min, theta_min, phi_min, r_max, theta_max, phi_max].
+    - jitter_mode (str): Mode for camera jittering ("uniform" or "normal"), defaults to "uniform"
+    - unit (str): Unit for camera pose angles ("radians" or "degrees"), defaults to "radians"
+    - look_at (str or list of floats): Target fixture name (str) or position (list of 3 floats [x, y, z]),
+      defaults to "table"
+    - intrinsics (dict or None): Camera intrinsic parameters with keys "fovy" and "principal"
+
+    Returns:
+        dict: Dictionary containing parsed camera parameters
+    """
     camera = {}
     camera["ranges"] = []
     camera["jitter_mode"] = "uniform"
     camera["unit"] = "radians"
+    camera["look_at"] = "table"
+    camera["intrinsics"] = None
     for subgrp in group[1:]:
         if subgrp[0] == ":ranges":
             for cam_range in subgrp[1]:
                 # ranges in spherical coordinates (physics convention)
                 camera["ranges"].append([eval(val) for val in cam_range])
-        if subgrp[0] == ":jitter_mode":
+        elif subgrp[0] == ":jitter_mode":
             camera["jitter_mode"] = subgrp[1]
-        if subgrp[0] == ":unit":
+            assert camera["jitter_mode"] in [
+                "uniform",
+                "normal",
+            ], f"Camera jitter mode {camera['jitter_mode']} not supported."
+        elif subgrp[0] == ":unit":
             camera["unit"] = subgrp[1]
-    assert camera["jitter_mode"] in [
-        "uniform",
-        "normal",
-    ], f"Camera jitter mode {camera['jitter_mode']} not supported."
-    assert camera["unit"] in [
-        "radians",
-        "degrees",
-    ], f"Camera pose unit should be radians or degrees, {camera['unit']} not supported."
+            assert camera["unit"] in [
+                "radians",
+                "degrees",
+            ], f"Camera pose unit should be radians or degrees, {camera['unit']} not supported."
+        elif subgrp[0] == ":look_at":
+            # look_at can be either a string (object/fixture name) or a list of floats (position)
+            if isinstance(subgrp[1], list):
+                camera["look_at"] = [eval(val) for val in subgrp[1]]
+            else:
+                camera["look_at"] = subgrp[1]
+        elif subgrp[0] == ":intrinsics":
+            # Parse camera intrinsics
+            intrinsics = {}
+            for intrinsic_param in subgrp[1:]:
+                param_name = intrinsic_param[0].lstrip(":")
+                param_value = intrinsic_param[1]
+
+                if param_name == "principal":
+                    # principal is a tuple/list of 2 values
+                    if isinstance(param_value, list):
+                        intrinsics[param_name] = [eval(val) for val in param_value]
+                    else:
+                        intrinsics[param_name] = eval(param_value)
+                else:
+                    # fovx and fovy are single values
+                    intrinsics[param_name] = eval(param_value)
+
+            # Assert all three intrinsic parameters are provided
+            assert "fovy" in intrinsics, "Camera intrinsics must include 'fovy'"
+            assert (
+                "principal" in intrinsics
+            ), "Camera intrinsics must include 'principal'"
+
+            camera["intrinsics"] = intrinsics
+
     return camera
 
 
@@ -164,7 +212,7 @@ def robosuite_parse_problem(problem_filename):
             elif t == ":textures":
                 textures = get_textures(group)
             elif t == ":camera":
-                camera = get_camera_poses(group)
+                camera = get_camera_params(group)
             elif t == ":table":
                 table_params = get_table_params(group)
             elif t == ":object_params":
