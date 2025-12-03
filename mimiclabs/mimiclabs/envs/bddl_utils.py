@@ -127,10 +127,15 @@ def get_table_params(group):
     """Parse table parameters (size as [width, length, height]) from BDDL."""
     table_params = {}
     for subgrp in group[1:]:
-        if subgrp[0] == ":size":
-            # Parse size as a list of 3 values: width, length, height
-            size_values = [eval(val) for val in subgrp[1:]]
-            table_params["size"] = size_values
+        param_name = subgrp[0].lstrip(":")
+        param_value = subgrp[1]
+
+        # If param_value is a list, evaluate each element
+        if isinstance(param_value, list):
+            table_params[param_name] = [eval(val) for val in param_value]
+        else:
+            # Single value, evaluate it
+            table_params[param_name] = eval(param_value)
     return table_params
 
 
@@ -146,17 +151,16 @@ def get_object_params(group):
         object_params[obj_name] = {}
 
         for param in obj_group[1:]:
-            # Strip the colon from parameter name
+            # param[0] is the parameter name, param[1] is the value
             param_name = param[0].lstrip(":")
+            param_value = param[1]
 
-            # Evaluate all parameter values
-            param_values = [eval(val) for val in param[1:]]
-
-            # If single value, unwrap from list; otherwise keep as list
-            if len(param_values) == 1:
-                object_params[obj_name][param_name] = param_values[0]
+            # If param_value is a list, evaluate each element
+            if isinstance(param_value, list):
+                object_params[obj_name][param_name] = [eval(val) for val in param_value]
             else:
-                object_params[obj_name][param_name] = param_values
+                # Single value, evaluate it
+                object_params[obj_name][param_name] = eval(param_value)
 
     return object_params
 
