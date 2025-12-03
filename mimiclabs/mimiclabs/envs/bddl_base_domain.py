@@ -411,27 +411,40 @@ class BDDLBaseDomain(RobosuiteEnv):
         self.object_states_dict = object_states_dict
         self.tracking_object_states_change = tracking_object_states_changes
 
-    def _setup_camera(self, mujoco_arena):
-        # Modify default agentview camera
+    def _setup_camera(self, mujoco_arena, pos=None, quat=None, camera_attribs=None):
+        # Assert that either both pos and quat are provided, or neither is provided
+        assert (pos is None and quat is None) or (
+            pos is not None and quat is not None
+        ), "Both pos and quat must be provided together, or neither should be provided"
+
+        if pos is None and quat is None:
+            # Default camera pose
+            pos = [1.0, 0, 1.6]
+            quat = [0.5963678, 0.3799282, 0.3799282, 0.5963678]
+
+        # Set agentview camera in arena
         mujoco_arena.set_camera(
-            camera_name="canonical_agentview",
-            pos=[0.5386131746834771, 0.0, 1.4903500240372423],
+            camera_name="agentview", pos=pos, quat=quat, camera_attribs=camera_attribs
+        )
+
+        # Add additional cameras for visualization purposes
+        mujoco_arena.set_camera(
+            camera_name="frontview", pos=[1.0, 0.0, 1.48], quat=[0.56, 0.43, 0.43, 0.56]
+        )
+        mujoco_arena.set_camera(
+            camera_name="galleryview",
+            pos=[2.844547668904445, 2.1279684793440667, 3.128616846013882],
             quat=[
-                0.6380177736282349,
-                0.3048497438430786,
-                0.30484986305236816,
-                0.6380177736282349,
+                0.42261379957199097,
+                0.23374411463737488,
+                0.41646939516067505,
+                0.7702690958976746,
             ],
         )
         mujoco_arena.set_camera(
-            camera_name="agentview",
-            pos=[0.5886131746834771, 0.0, 1.4903500240372423],
-            quat=[
-                0.6380177736282349,
-                0.3048497438430786,
-                0.30484986305236816,
-                0.6380177736282349,
-            ],
+            camera_name="paperview",
+            pos=[2.1, 0.535, 2.075],
+            quat=[0.513, 0.353, 0.443, 0.645],
         )
 
     def _load_model(self):
@@ -459,23 +472,28 @@ class BDDLBaseDomain(RobosuiteEnv):
         # Arena always gets set to zero origin
         mujoco_arena.set_origin([0, 0, 0])
 
-        if len(self.parsed_problem["camera"].get("ranges", [])) > 0:
-            self._setup_camera(
-                mujoco_arena,
-                agentview_pose=self._sample_camera_pose(
-                    degrees=(self.parsed_problem["camera"]["unit"] == "degrees")
-                ),
-            )
-        else:
-            self._setup_camera(mujoco_arena)
-
-        # self._load_custom_material() # NOTE(VS) removed, unused
-
         self._load_fixtures_in_arena(mujoco_arena)
 
         self._load_objects_in_arena(mujoco_arena, self.parsed_problem["object_params"])
 
         self._load_sites_in_arena(mujoco_arena)
+
+        # Change camera pose in arena
+        if len(self.parsed_problem["camera"].get("ranges", [])) > 0:
+            cam_pos_quat = self._sample_camera_pose(
+                options=self.parsed_problem["camera"]
+            )
+            camera_attribs = None
+            if "intrinsics" in self.parsed_problem["camera"]:
+                camera_attribs = self.parsed_problem["camera"]["intrinsics"]
+            self._setup_camera(
+                mujoco_arena,
+                pos=cam_pos_quat["pos"],
+                quat=cam_pos_quat["quat"],
+                camera_attribs=camera_attribs,
+            )
+        else:
+            self._setup_camera(mujoco_arena)
 
         self._generate_object_state_wrapper()
 
@@ -499,15 +517,15 @@ class BDDLBaseDomain(RobosuiteEnv):
         for fixture in self.fixtures:
             self.model.merge_assets(fixture)
 
-    def _sample_camera_pose(self, degrees=False):
-        ranges_r_theta_phi = self.parsed_problem["camera"]["ranges"]
+    def _sample_camera_pose(self, options):
+        ranges_r_theta_phi = options["ranges"]
         range_choice = np.random.choice(range(len(ranges_r_theta_phi)))
         range_r_theta_phi = ranges_r_theta_phi[range_choice]
         range_r = [range_r_theta_phi[0], range_r_theta_phi[3]]
         range_theta = [range_r_theta_phi[1], range_r_theta_phi[4]]
         range_phi = [range_r_theta_phi[2], range_r_theta_phi[5]]
 
-        jitter_mode = self.parsed_problem["camera"]["jitter_mode"]
+        jitter_mode = options["jitter_mode"]
 
         if jitter_mode == "uniform":
             sample_r = (range_r[1] - range_r[0]) * np.random.random_sample() + range_r[
@@ -544,19 +562,43 @@ class BDDLBaseDomain(RobosuiteEnv):
                 range_phi[1],
             )
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"Camera jitter mode '{jitter_mode}' is not supported. "
+                f"Supported modes are: 'uniform', 'normal'."
+            )
 
         # Converting spherical to pos and quat
         r_theta_phi = (sample_r, sample_theta, sample_phi)
-        if degrees:
+        if options["unit"] == "degrees":
             r_theta_phi = (
                 r_theta_phi[0],
                 np.deg2rad(r_theta_phi[1]),
                 np.deg2rad(r_theta_phi[2]),
             )
+        else:
+            assert (
+                options["unit"] == "radians"
+            ), "Unit must be either 'radians' or 'degrees'"
         pos, quat_wxyz = convert_spherical_to_pos_quat(r_theta_phi)
-        cam_fixation_pos = np.array(self.table_offset)  # table center
 
+        # Adjusting position based on look_at option
+        if isinstance(options["look_at"], str):
+            if options["look_at"] == "table":
+                # look at table center
+                cam_fixation_pos = np.array(self.table_offset)
+            else:
+                raise NotImplementedError(
+                    "Only 'table' or 3D point are supported for look_at option."
+                )
+        else:
+            # look at specified 3D point
+            assert (
+                len(options["look_at"]) == 3
+            ), "look_at position must be a list of 3 floats"
+            assert all(
+                isinstance(coord, (int, float)) for coord in options["look_at"]
+            ), "All coordinates in look_at position must be numbers"
+            cam_fixation_pos = np.array(options["look_at"])
         pos += cam_fixation_pos
 
         return {"pos": pos, "quat": quat_wxyz}

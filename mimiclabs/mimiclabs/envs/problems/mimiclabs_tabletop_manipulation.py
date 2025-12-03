@@ -200,40 +200,6 @@ class MimicLabs_Tabletop_Manipulation_Base(BDDLBaseDomain):
                         1 - self.sim.model.site_rgba[vis_g_id][3]
                     )
 
-    def _setup_camera(self, mujoco_arena, agentview_pose=None):
-        if agentview_pose is None:
-            mujoco_arena.set_camera(
-                camera_name="agentview",
-                pos=[1.0, 0, 1.6],
-                quat=[0.5963678, 0.3799282, 0.3799282, 0.5963678],
-            )
-        else:
-            mujoco_arena.set_camera(
-                camera_name="agentview",
-                pos=agentview_pose["pos"],
-                quat=agentview_pose["quat"],
-            )
-
-        # For visualization purpose
-        mujoco_arena.set_camera(
-            camera_name="frontview", pos=[1.0, 0.0, 1.48], quat=[0.56, 0.43, 0.43, 0.56]
-        )
-        mujoco_arena.set_camera(
-            camera_name="galleryview",
-            pos=[2.844547668904445, 2.1279684793440667, 3.128616846013882],
-            quat=[
-                0.42261379957199097,
-                0.23374411463737488,
-                0.41646939516067505,
-                0.7702690958976746,
-            ],
-        )
-        mujoco_arena.set_camera(
-            camera_name="paperview",
-            pos=[2.1, 0.535, 2.075],
-            quat=[0.513, 0.353, 0.443, 0.645],
-        )
-
 
 @register_problem
 class MimicLabs_Lab1_Tabletop_Manipulation(MimicLabs_Tabletop_Manipulation_Base):
