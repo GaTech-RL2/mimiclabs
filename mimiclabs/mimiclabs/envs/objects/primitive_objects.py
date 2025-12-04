@@ -63,6 +63,6 @@ class MujocoCuboid(BoxObject):
         self.category_name = "_".join(
             re.sub(r"([A-Z])", r" \1", self.__class__.__name__).split()
         ).lower()
-        self.rotation = (np.pi / 2, np.pi / 2)
+        self.rotation = (0.0, 0.0)
         self.rotation_axis = "x"
         self.object_properties = {"vis_site_names": {}}
