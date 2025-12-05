@@ -721,14 +721,27 @@ class BDDLBaseDomain(RobosuiteEnv):
 
                 elif texture_params["texture_type"] == "color":
                     image = cv2.imread(tex_file)
-                    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+                    H, W = image.shape[:2]
+                    
                     hsv_ranges = texture_params["hsv"]
                     hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
                     hsv_range = hsv_ranges[hsv_range_choice]
+                    
+                    # Sample all HSV components from the range
                     hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
-                    hsv_image[:, :, 0] = (hsv_image[:, :, 0] + hue) % 180
-
-                    out_rgb = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+                    sat = np.random.choice(range(hsv_range[1], hsv_range[4] + 1))
+                    val = np.random.choice(range(hsv_range[2], hsv_range[5] + 1))
+                    
+                    # Create solid color texture with sampled HSV values
+                    out_hsv = np.stack(
+                        [
+                            hue * np.ones([H, W]),
+                            sat * np.ones([H, W]),
+                            val * np.ones([H, W]),
+                        ],
+                        -1,
+                    ).astype(np.uint8)
+                    out_rgb = cv2.cvtColor(out_hsv, cv2.COLOR_HSV2RGB)
 
                 elif texture_params["texture_type"] == "fractal":
                     hsv_ranges = texture_params["hsv"]
