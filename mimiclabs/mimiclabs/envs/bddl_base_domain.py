@@ -484,8 +484,13 @@ class BDDLBaseDomain(RobosuiteEnv):
                 options=self.parsed_problem["camera"]
             )
             camera_attribs = None
-            if "intrinsics" in self.parsed_problem["camera"]:
+            if self.parsed_problem["camera"]["intrinsics"] is not None:
                 camera_attribs = self.parsed_problem["camera"]["intrinsics"]
+                for key, value in camera_attribs.items():
+                    if isinstance(value, (list, tuple, np.ndarray)):
+                        camera_attribs[key] = " ".join([str(v) for v in value])
+                    else:
+                        camera_attribs[key] = str(value)
             self._setup_camera(
                 mujoco_arena,
                 pos=cam_pos_quat["pos"],
@@ -722,16 +727,16 @@ class BDDLBaseDomain(RobosuiteEnv):
                 elif texture_params["texture_type"] == "color":
                     image = cv2.imread(tex_file)
                     H, W = image.shape[:2]
-                    
+
                     hsv_ranges = texture_params["hsv"]
                     hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
                     hsv_range = hsv_ranges[hsv_range_choice]
-                    
+
                     # Sample all HSV components from the range
                     hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
                     sat = np.random.choice(range(hsv_range[1], hsv_range[4] + 1))
                     val = np.random.choice(range(hsv_range[2], hsv_range[5] + 1))
-                    
+
                     # Create solid color texture with sampled HSV values
                     out_hsv = np.stack(
                         [

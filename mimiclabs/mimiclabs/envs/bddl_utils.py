@@ -102,22 +102,18 @@ def get_camera_params(group):
                 param_name = intrinsic_param[0].lstrip(":")
                 param_value = intrinsic_param[1]
 
-                if param_name == "principal":
+                if isinstance(param_value, list):
                     # principal is a tuple/list of 2 values
-                    if isinstance(param_value, list):
-                        intrinsics[param_name] = [eval(val) for val in param_value]
-                    else:
-                        intrinsics[param_name] = eval(param_value)
+                    intrinsics[param_name] = [eval(val) for val in param_value]
                 else:
                     # fovx and fovy are single values
                     intrinsics[param_name] = eval(param_value)
 
-            # Assert all three intrinsic parameters are provided
-            assert "fovy" in intrinsics, "Camera intrinsics must include 'fovy'"
+            # Assert only fovy and principal are present
+            unexpected_keys = set(intrinsics.keys()) - {"fovy", "principal"}
             assert (
-                "principal" in intrinsics
-            ), "Camera intrinsics must include 'principal'"
-
+                not unexpected_keys
+            ), f"Camera intrinsics contains unexpected keys: {unexpected_keys}"
             camera["intrinsics"] = intrinsics
 
     return camera
