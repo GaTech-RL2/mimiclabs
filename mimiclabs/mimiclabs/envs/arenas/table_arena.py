@@ -77,6 +77,19 @@ class TableArena(Arena):
         )
         texwall.set("file", wall_file)
 
+    def set_table_rgba(self, rgba=None):
+        """
+        Sets the rgba color of the table visual and removes material attribute.
+
+        Args:
+            rgba (4-tuple or list): RGBA color values (R, G, B, A) in range [0, 1].
+        """
+        rgba_to_set = rgba
+        if rgba_to_set is not None:
+            self.table_visual.set("rgba", array_to_string(rgba_to_set))
+            if self.table_visual.get("material") is not None:
+                del self.table_visual.attrib["material"]
+
     def configure_location(self):
         """Configures correct locations for this arena"""
         self.floor.set("pos", array_to_string(self.bottom_pos))

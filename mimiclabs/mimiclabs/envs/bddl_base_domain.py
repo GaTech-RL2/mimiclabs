@@ -642,15 +642,29 @@ class BDDLBaseDomain(RobosuiteEnv):
         """
         The following texture types are supported:
             file, wood, color, fractal, jitter
+
+        There is a special case for table texture of type "color".
+        In this case, we set the table texture to a solid color
+        by modifying the rgba attribute of the table visual geom
+        directly, instead of changing the texture file.
         """
         for obj_name, texture_params in self.parsed_problem["textures"].items():
+            # Find the texture element in the xml
+            tex = None
             if "table" in obj_name:
+                if texture_params["texture_type"] == "color":
+                    # Special case for "color" table texture: set rgba directly
+                    hsv_ranges = texture_params["hsv"]
+                    hue, sat, val = sample_hsv_from_hsv_ranges(hsv_ranges)
+                    rgba = hsv_to_rgba(hue, sat, val, alpha=1.0)
+                    mujoco_arena.set_table_rgba(rgba=rgba)
+                    continue  # skip texture file modification
                 tex = mujoco_arena.asset.find("./texture[@name='tex-table']")
-
             elif obj_name in self.objects_dict:
                 tex = self.objects_dict[obj_name].asset.find("./texture")
             elif obj_name in self.fixtures_dict:
                 tex = self.fixtures_dict[obj_name].asset.find("./texture")
+
             if tex is not None:  # cannot use texture on obj otherwise
                 tex_file = tex.attrib["file"]
                 img_bgr = cv2.imread(tex_file)  # BGR
@@ -715,9 +729,7 @@ class BDDLBaseDomain(RobosuiteEnv):
                     if "hsv" in texture_params:
                         hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
                         hsv_ranges = texture_params["hsv"]
-                        hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
-                        hsv_range = hsv_ranges[hsv_range_choice]
-                        hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
+                        hue, _, _ = sample_hsv_from_hsv_ranges(hsv_ranges)
                         hsv_image[:, :, 0] = (hsv_image[:, :, 0] + hue) % 180
 
                         out_rgb = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
@@ -729,13 +741,7 @@ class BDDLBaseDomain(RobosuiteEnv):
                     H, W = image.shape[:2]
 
                     hsv_ranges = texture_params["hsv"]
-                    hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
-                    hsv_range = hsv_ranges[hsv_range_choice]
-
-                    # Sample all HSV components from the range
-                    hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
-                    sat = np.random.choice(range(hsv_range[1], hsv_range[4] + 1))
-                    val = np.random.choice(range(hsv_range[2], hsv_range[5] + 1))
+                    hue, sat, val = sample_hsv_from_hsv_ranges(hsv_ranges)
 
                     # Create solid color texture with sampled HSV values
                     out_hsv = np.stack(
@@ -750,14 +756,10 @@ class BDDLBaseDomain(RobosuiteEnv):
 
                 elif texture_params["texture_type"] == "fractal":
                     hsv_ranges = texture_params["hsv"]
-                    hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
-                    hsv_range = hsv_ranges[hsv_range_choice]
                     turbulence = texture_params["turbulence"]
                     sigma = texture_params["sigma"]
 
-                    hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
-                    sat = np.random.choice(range(hsv_range[1], hsv_range[4] + 1))
-                    val = np.random.choice(range(hsv_range[2], hsv_range[5] + 1))
+                    hue, sat, val = sample_hsv_from_hsv_ranges(hsv_ranges)
                     # 170-10 is red, 50-70 is green, 110-130 is blue
                     out_hsv = np.stack(
                         [
@@ -784,12 +786,7 @@ class BDDLBaseDomain(RobosuiteEnv):
 
                 elif texture_params["texture_type"] == "jitter":
                     hsv_ranges = texture_params["hsv"]
-                    hsv_range_choice = np.random.choice(range(len(hsv_ranges)))
-                    hsv_range = hsv_ranges[hsv_range_choice]
-
-                    hue = np.random.choice(range(hsv_range[0], hsv_range[3] + 1))
-                    sat = np.random.choice(range(hsv_range[1], hsv_range[4] + 1))
-                    val = np.random.choice(range(hsv_range[2], hsv_range[5] + 1))
+                    hue, sat, val = sample_hsv_from_hsv_ranges(hsv_ranges)
 
                     img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
                     h, s, v = cv2.split(img_hsv)
