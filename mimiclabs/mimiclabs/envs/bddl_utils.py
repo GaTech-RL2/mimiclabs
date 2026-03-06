@@ -173,6 +173,44 @@ def get_object_params(group):
     return object_params
 
 
+def get_regions(t, regions, group):
+    group.pop(0)
+    while group:
+        region = group.pop(0)
+        region_name = region[0]
+        target_name = None
+        region_dict = {
+            "target": None,
+            "ranges": [],
+            "extra": [],
+            "yaw_rotation": [[0, 0]],
+            "rgba": [0, 0, 1, 0],
+        }
+        for attribute in region[1:]:
+            if attribute[0] == ":target":
+                assert len(attribute) == 2
+                region_dict["target"] = attribute[1]
+                target_name = attribute[1]
+            elif attribute[0] == ":ranges":
+                for rect_range in attribute[1]:
+                    assert (
+                        len(rect_range) == 4
+                    ), f"Dimension of rectangular range mismatched!!, supposed to be 4, only found {len(rect_range)}"
+                    region_dict["ranges"].append([float(x) for x in rect_range])
+            elif attribute[0] == ":yaw_rotation":
+                region_dict["yaw_rotation"] = [
+                    [eval(x) for x in value] for value in attribute[1]
+                ]
+            elif attribute[0] == ":rgba":
+                assert (
+                    len(attribute[1]) == 4
+                ), f"Missing specification for rgba color, supposed to be 4 dimension, but only got  {attribute[1]}"
+                region_dict["rgba"] = [float(x) for x in attribute[1]]
+            else:
+                raise NotImplementedError
+        regions[target_name + "_" + region_name] = region_dict
+
+
 def robosuite_parse_problem(problem_filename):
     if problem_filename.endswith(".json"):
         parsed_problem = json.load(open(problem_filename, "r"))
