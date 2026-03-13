@@ -117,6 +117,7 @@ def main(args):
         robots=robots,
         controller_types=["osc_pose"] * len(robots),
         controller_overrides=[controller_overrides] * len(robots),
+        horizon=args.horizon,
         **kwargs,
     )
 
@@ -286,6 +287,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--robots", nargs="+", default=None, help="robot(s) to use for this task"
+    )
+    parser.add_argument(
+        "--horizon",
+        type=int,
+        default=1000,
+        help="horizon for the environment",
     )
     parser.add_argument(
         "--device",
